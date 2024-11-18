@@ -39,7 +39,7 @@ security:
         - { path: ^/login, allow_if: "!is_fully_authenticated()" }
         - { path: ^/register, allow_if: "!is_fully_authenticated()" }
         # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/posts/new, roles: ROLE_ADMIN }
 
 when@test:
     security:
