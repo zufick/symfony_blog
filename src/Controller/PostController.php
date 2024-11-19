@@ -6,6 +6,7 @@ use App\Entity\Post;
 use App\Form\PostType;
 use App\Repository\PostRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,10 +15,26 @@ use Symfony\Component\Routing\Attribute\Route;
 class PostController extends AbstractController
 {
     #[Route('/', name: 'posts_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        PaginatorInterface $paginator
+    ): Response
     {
+        $repository = $entityManager->getRepository(Post::class);
+
+        $query = $repository->createQueryBuilder('p')
+            ->orderBy('p.id', 'DESC') // Упорядочиваем по дате создания
+            ->getQuery();
+
+        $posts = $paginator->paginate(
+            $query, // QueryBuilder или Query
+            $request->query->getInt('page', 1), // Текущая страница
+            8 // Количество постов на странице
+        );
+
         return $this->render('post/index.html.twig', [
-            'controller_name' => 'PostController',
+            'posts' => $posts,
         ]);
     }
 
