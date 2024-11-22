@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Category;
 use App\Entity\Post;
 use App\Form\PostType;
+use App\Repository\CategoryRepository;
 use App\Repository\PostRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
@@ -33,13 +35,22 @@ class PostController extends AbstractController
             8 // Количество постов на странице
         );
 
+        $latestPost = $repository->createQueryBuilder('p')
+            ->orderBy('p.id', 'DESC')
+            ->setMaxResults(1) // Ограничиваем результат одним постом
+            ->getQuery()
+            ->getOneOrNullResult(); // Получаем объект поста или null
+
         return $this->render('post/index.html.twig', [
             'posts' => $posts,
+            'latestPost' => $latestPost
         ]);
     }
 
     #[Route('/posts/new', name: 'post_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager):Response
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager):Response
     {
         $post = new Post();
 
@@ -93,6 +104,28 @@ class PostController extends AbstractController
     public function show(Post $post): Response {
         return $this->render('post/show.html.twig', [
             'post' => $post,
+        ]);
+    }
+
+    #[Route('/category/{slug}', name: 'category_show', methods: ['GET'])]
+    public function showCategory(
+        string $slug,
+        PostRepository $postRepository,
+        CategoryRepository $categoryRepository,
+        EntityManagerInterface $entityManager,
+        PaginatorInterface $paginator,
+        Request $request,
+    ): Response {
+        $page = $request->query->getInt('page', 1); // Получение текущей страницы из параметра URL
+
+        $posts = $postRepository->findByCategorySlugWithPagination($slug, $page, 8, $paginator);
+        $category = $categoryRepository->findOneBy(['slug' => $slug]);
+
+
+
+        return $this->render('category/show.html.twig', [
+            'category' => $category,
+            'posts' => $posts,
         ]);
     }
 }

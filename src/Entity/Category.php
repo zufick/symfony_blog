@@ -6,6 +6,7 @@ use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
 class Category
@@ -23,6 +24,9 @@ class Category
      */
     #[ORM\ManyToMany(targetEntity: Post::class, mappedBy: 'category')]
     private Collection $posts;
+
+    #[ORM\Column(type: 'string', length: 255, unique: true, nullable: true)]
+    private ?string $slug = null;
 
     public function __construct()
     {
@@ -43,7 +47,19 @@ class Category
     {
         $this->title = $title;
 
+        $slugger = new \Symfony\Component\String\Slugger\AsciiSlugger();
+        $this->slug = $slugger->slug($title)->lower();
+
         return $this;
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function generateSlug(SluggerInterface $slugger): void
+    {
+        if (empty($this->slug)) {
+            $this->slug = $slugger->slug($this->title)->lower();
+        }
     }
 
     /**
@@ -69,6 +85,18 @@ class Category
         if ($this->posts->removeElement($post)) {
             $post->removeCategory($this);
         }
+
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
 
         return $this;
     }
