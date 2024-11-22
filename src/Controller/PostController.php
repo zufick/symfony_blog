@@ -14,6 +14,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+// TODO: Caching
+// TODO: Show post's categories on post's page
 // TODO: Resize image to 1280x1280 max
 // TODO: Edit, Delete posts
 // TODO: Show specific user's posts
