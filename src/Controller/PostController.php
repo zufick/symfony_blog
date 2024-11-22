@@ -14,6 +14,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+// TODO: Resize image to 1280x1280 max
+// TODO: Edit, Delete posts
+// TODO: Show specific user's posts
+// TODO: Comments
 class PostController extends AbstractController
 {
     #[Route('/', name: 'posts_index', methods: ['GET'])]

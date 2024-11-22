@@ -23,29 +23,23 @@
 
     <div class="row mb-2" style="align-items: stretch;">
         {% for post in posts %}
-        <div class="col-md-6">
-            <div style="height: 90%;" class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
-                <div class="col p-4 d-flex flex-column position-static">
-                    <div style="gap: 20px; display: flex ;flex-wrap: wrap;">
-                    {% for category in post.categories %}
-                        <span class="d-inline-block mb-2 text-primary-emphasis">{{ category.title }}</span>
-                    {% endfor %}
-                    </div>
-
-                    <h3 class="mb-0">{{ post.title }}</h3>
-                    <div class="mb-1 text-body-secondary">{{ post.createdAt|date('F j, Y') }} by {{ post.user.fullname }}</div>
-                    <p class="card-text mb-auto">{{ post.content|slice(0, 150) }}...</p>
-                    <a href="{{ path('post_show', { id: post.id }) }}" target="_blank" class="icon-link gap-1 icon-link-hover stretched-link">
-                        Continue reading
-                        <svg class="bi"><use xlink:href="#chevron-right"></use></svg>
-                    </a>
-                </div>
-                <div class="col-auto d-none d-lg-block">
-                    <img class="bd-placeholder-img" width="200" height="250" style="object-fit: cover; height: 100%;" src="{{ post.imgUrl }}" alt="Post thumbnail">
-                </div>
-            </div>
-        </div>
+            {% include '_post_card.html.twig' with {'post': post} %}
         {% endfor %}
+    </div>
+
+    <style>
+        #navigation>* {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+            gap: 20px;
+            font-size: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+    </style>
+
+    <div id="navigation">
+        {{ knp_pagination_render(posts) }}
     </div>
 
 {% endblock %}
