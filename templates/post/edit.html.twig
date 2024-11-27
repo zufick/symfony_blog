@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Blog{% endblock %}
+
+{% block body %}
+    <h3>Edit Post</h3>
+    {{ form_start(form) }}
+    {{ form_widget(form) }}
+
+    <div class="d-flex gap-2 mb-4">
+        <button class="btn btn-primary" type="submit">Save Changes</button>
+        {{ form_end(form) }}
+        <a href="{{ path('post_show', { id: post.id }) }}" class="btn btn-secondary">Cancel</a>
+    </div>
+{% endblock %}

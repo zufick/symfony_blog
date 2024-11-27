@@ -7,6 +7,7 @@ use App\Entity\Post;
 use App\Form\PostType;
 use App\Repository\CategoryRepository;
 use App\Repository\PostRepository;
+use App\Service\ImageResizerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,9 +16,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 // TODO: Caching
-// TODO: Show post's categories on post's page
-// TODO: Resize image to 1280x1280 max
-// TODO: Edit, Delete posts
 // TODO: Show specific user's posts
 // TODO: Comments
 class PostController extends AbstractController
@@ -56,7 +54,9 @@ class PostController extends AbstractController
     #[Route('/posts/new', name: 'post_new', methods: ['GET', 'POST'])]
     public function new(
         Request $request,
-        EntityManagerInterface $entityManager):Response
+        EntityManagerInterface $entityManager,
+        ImageResizerService $imageResizerService,
+    ):Response
     {
         $post = new Post();
 
@@ -75,22 +75,20 @@ class PostController extends AbstractController
             $imageFile = $form->get('image')->getData();
 
             if ($imageFile) {
-                // Уникальное имя файла
                 $newFilename = uniqid() . '.' . $imageFile->guessExtension();
+                $targetDirectory = $this->getParameter('uploads_directory');
+                $imageFilePath = $targetDirectory . '/' . $newFilename;
 
-                // Сохранение файла в директории
-                $imageFile->move(
-                    $this->getParameter('uploads_directory'), // Должна быть настроена директория
-                    $newFilename
-                );
+                $imageFile->move($targetDirectory, $newFilename);
 
-                // Установка пути к файлу в сущность
+                // Изменение размера с использованием сервиса
+                $imageResizerService->resizeImage($imageFilePath, 1280, 1280);
+
                 $post->setImgUrl(
-                    $this->getParameter('uploads_base_url')
-                    . '/' .
-                    $newFilename
+                    $this->getParameter('uploads_base_url') . '/' . $newFilename
                 );
             }
+
 
 
             $entityManager->persist($post);
@@ -104,6 +102,67 @@ class PostController extends AbstractController
         return $this->render('post/new.html.twig', [
             'form' => $form,
         ]);
+    }
+
+    #[Route('/posts/edit/{id}', name: 'post_edit', methods: ['GET', 'POST'])]
+    public function edit(
+        Request $request,
+        Post $post,
+        EntityManagerInterface $entityManager,
+        ImageResizerService $imageResizerService
+    ): Response {
+        // Проверка прав на редактирование
+        $this->denyAccessUnlessGranted('EDIT', $post);
+
+        $form = $this->createForm(PostType::class, $post, [
+            'is_edit' => true, // Указываем, что это форма редактирования
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $imageFile = $form->get('image')->getData();
+
+            if ($imageFile) {
+                $newFilename = uniqid() . '.' . $imageFile->guessExtension();
+                $targetDirectory = $this->getParameter('uploads_directory');
+                $imageFilePath = $targetDirectory . '/' . $newFilename;
+
+                $imageFile->move($targetDirectory, $newFilename);
+
+                // Изменение размера изображения
+                $imageResizerService->resizeImage($imageFilePath, 1280, 1280);
+
+                $post->setImgUrl(
+                    $this->getParameter('uploads_base_url') . '/' . $newFilename
+                );
+            }
+
+            $entityManager->flush();
+
+            return $this->redirectToRoute('post_show', ['id' => $post->getId()]);
+        }
+
+        return $this->render('post/edit.html.twig', [
+            'form' => $form->createView(),
+            'post' => $post,
+        ]);
+    }
+
+    #[Route('/posts/delete/{id}', name: 'post_delete', methods: ['POST'])]
+    public function delete(
+        Request $request,
+        Post $post,
+        EntityManagerInterface $entityManager
+    ): Response {
+        // Проверка прав на удаление
+        $this->denyAccessUnlessGranted('DELETE', $post);
+
+        if ($this->isCsrfTokenValid('delete' . $post->getId(), $request->request->get('_token'))) {
+            $entityManager->remove($post);
+            $entityManager->flush();
+        }
+
+        return $this->redirectToRoute('posts_index');
     }
 
     #[Route('/posts/show/{id}', name: 'post_show', methods: ['GET'])]

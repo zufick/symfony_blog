@@ -5,7 +5,25 @@
 {% block body %}
     <article class="blog-post mb-5" style="display: flow-root;">
         <h2 class="display-5 link-body-emphasis mb-1">{{ post.title }}</h2>
+        <div style="gap: 20px; display: flex; flex-wrap: wrap;">
+            {% for category in post.categories %}
+                <span class="d-inline-block mb-2 text-secondary">{{ category.title }}</span>
+            {% endfor %}
+        </div>
         <p class="blog-post-meta">{{ post.createdAt|date('Y-m-d H:i:s') }} by <a href="#">{{ post.user.fullname }}</a></p>
+
+        <div class="mb-4 d-flex gap-2">
+            {% if is_granted('EDIT', post) %}
+                <a href="{{ path('post_edit', { id: post.id }) }}" class="btn btn-warning">Edit</a>
+            {% endif %}
+            {% if is_granted('DELETE', post) %}
+                <form method="post" action="{{ path('post_delete', { id: post.id }) }}" onsubmit="return confirm('Are you sure?');" style="display:inline;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ post.id) }}">
+                    <button class="btn btn-danger">Delete</button>
+                </form>
+            {% endif %}
+        </div>
+
         <div>
             <img style="max-width: 420px; max-height: 150px; float: left; margin: 0px 30px 30px 0;" src="{{ post.imgUrl }}" alt="Post image">
             <p style="white-space: pre-wrap;">{{ post.content }}</p>
