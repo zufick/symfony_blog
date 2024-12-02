@@ -10,7 +10,7 @@
                 <span class="d-inline-block mb-2 text-secondary">{{ category.title }}</span>
             {% endfor %}
         </div>
-        <p class="blog-post-meta">{{ post.createdAt|date('Y-m-d H:i:s') }} by <a href="#">{{ post.user.fullname }}</a></p>
+        <p class="blog-post-meta">{{ post.createdAt|date('Y-m-d H:i:s') }} by <a href="{{path('user_posts', {id: post.user.id})}}">{{ post.user.fullname }}</a></p>
 
         <div class="mb-4 d-flex gap-2">
             {% if is_granted('EDIT', post) %}

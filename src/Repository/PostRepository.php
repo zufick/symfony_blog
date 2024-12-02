@@ -3,9 +3,11 @@
 namespace App\Repository;
 
 use App\Entity\Post;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Knp\Component\Pager\Pagination\PaginationInterface;
+use Knp\Component\Pager\Paginator;
 use Knp\Component\Pager\PaginatorInterface;
 
 /**
@@ -38,6 +40,27 @@ class PostRepository extends ServiceEntityRepository
             $limit   // Количество записей на страницу
         );
     }
+
+    public function findByUserWithPagination(
+        User $user,
+        int $page,
+        int $limit,
+        PaginatorInterface $paginator
+    ): PaginationInterface
+    {
+        $query = $this->createQueryBuilder('p')
+            ->where('p.user = :user')
+            ->setParameter('user', $user)
+            ->orderBy('p.id', 'DESC') // Сортировка по ID (или измените на нужный порядок)
+            ->getQuery();
+
+        return $paginator->paginate(
+            $query,  // Query для выполнения
+            $page,   // Номер текущей страницы
+            $limit   // Количество записей на страницу
+        );
+    }
+
 
 //    /**
 //     * @return Post[] Returns an array of Post objects

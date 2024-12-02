@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Category;
 use App\Entity\Post;
+use App\Entity\User;
 use App\Form\PostType;
 use App\Repository\CategoryRepository;
 use App\Repository\PostRepository;
@@ -16,7 +17,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 // TODO: Caching
-// TODO: Show specific user's posts
 // TODO: Comments
 class PostController extends AbstractController
 {
@@ -193,4 +193,32 @@ class PostController extends AbstractController
             'posts' => $posts,
         ]);
     }
+
+    #[Route('/user/{id}/posts', name: 'user_posts', methods: ['GET'])]
+    public function userPosts(
+        int $id,
+        PostRepository $postRepository,
+        EntityManagerInterface $entityManager,
+        PaginatorInterface $paginator,
+        Request $request
+    ): Response {
+        // Получаем пользователя по ID
+        $user = $entityManager->getRepository(User::class)->find($id);
+
+        if (!$user) {
+            throw $this->createNotFoundException('User not found');
+        }
+
+        // Текущая страница из URL
+        $page = $request->query->getInt('page', 1);
+
+        // Получение постов пользователя с пагинацией
+        $posts = $postRepository->findByUserWithPagination($user, $page, 8, $paginator);
+
+        return $this->render('post/user_posts.html.twig', [
+            'user' => $user,
+            'posts' => $posts,
+        ]);
+    }
+
 }

@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Posts by {{  user.username }}{% endblock %}
+
+{% block body %}
+
+    <div class="row mb-2" style="align-items: stretch;">
+        <h1>Posts by {{ user.username }}</h1>
+        {% for post in posts %}
+            {% include '_post_card.html.twig' with {'post': post} %}
+        {% endfor %}
+    </div>
+
+    <style>
+        #navigation>* {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+            gap: 20px;
+            font-size: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+    </style>
+
+    <div id="navigation">
+        {{ knp_pagination_render(posts) }}
+    </div>
+
+{% endblock %}
