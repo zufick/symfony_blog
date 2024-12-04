@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Category;
+use App\Entity\Comment;
 use App\Entity\Post;
 use App\Entity\User;
+use App\Form\CommentType;
 use App\Form\PostType;
 use App\Repository\CategoryRepository;
 use App\Repository\PostRepository;
@@ -164,8 +166,15 @@ class PostController extends AbstractController
 
     #[Route('/posts/show/{id}', name: 'post_show', methods: ['GET'])]
     public function show(Post $post): Response {
+        $commentForm = $this->createForm(CommentType::class);
+        $rootComments = $post->getComments()->filter(function ($comment) {
+            return $comment->getParent() === null;
+        });
+
         return $this->render('post/show.html.twig', [
             'post' => $post,
+            'commentForm' => $commentForm->createView(),
+            'rootComments' => $rootComments,
         ]);
     }
 
@@ -209,7 +218,6 @@ class PostController extends AbstractController
 
         $page = $request->query->getInt('page', 1);
 
-        // Получение постов пользователя с пагинацией
         $posts = $postRepository->findByUserWithPagination($user, $page, $postsPerPage, $paginator);
 
         return $this->render('post/user_posts.html.twig', [
@@ -218,4 +226,31 @@ class PostController extends AbstractController
         ]);
     }
 
+    #[Route('/posts/{id}/comment', name: 'post_comment', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function addComment(
+        Request $request,
+        Post $post,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $comment = new Comment();
+        $form = $this->createForm(CommentType::class, $comment);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $comment->setPost($post);
+            $comment->setAuthor($this->getUser());
+
+            $parentId = $request->request->get('parent_id');
+            if ($parentId) {
+                $parent = $entityManager->getRepository(Comment::class)->find($parentId);
+                $comment->setParent($parent);
+            }
+
+            $entityManager->persist($comment);
+            $entityManager->flush();
+        }
+
+        return $this->redirectToRoute('post_show', ['id' => $post->getId()]);
+    }
 }

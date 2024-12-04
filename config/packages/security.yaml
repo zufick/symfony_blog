@@ -40,6 +40,7 @@ security:
         - { path: ^/register, allow_if: "!is_fully_authenticated()" }
         # - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/posts/new, roles: ROLE_ADMIN }
+        - { path: ^/posts/\d+/comment$, methods: [ POST ], allow_if: "is_fully_authenticated()" }
 
 when@test:
     security:
