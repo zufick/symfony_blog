@@ -28,22 +28,23 @@ class PostController extends AbstractController
     ): Response
     {
         $repository = $entityManager->getRepository(Post::class);
+        $postsPerPage = 8;
 
         $query = $repository->createQueryBuilder('p')
-            ->orderBy('p.id', 'DESC') // Упорядочиваем по дате создания
+            ->orderBy('p.id', 'DESC')
             ->getQuery();
 
         $posts = $paginator->paginate(
-            $query, // QueryBuilder или Query
-            $request->query->getInt('page', 1), // Текущая страница
-            8 // Количество постов на странице
+            $query,
+            $request->query->getInt('page', 1),
+            $postsPerPage
         );
 
         $latestPost = $repository->createQueryBuilder('p')
             ->orderBy('p.id', 'DESC')
-            ->setMaxResults(1) // Ограничиваем результат одним постом
+            ->setMaxResults(1)
             ->getQuery()
-            ->getOneOrNullResult(); // Получаем объект поста или null
+            ->getOneOrNullResult();
 
         return $this->render('post/index.html.twig', [
             'posts' => $posts,
@@ -81,7 +82,6 @@ class PostController extends AbstractController
 
                 $imageFile->move($targetDirectory, $newFilename);
 
-                // Изменение размера с использованием сервиса
                 $imageResizerService->resizeImage($imageFilePath, 1280, 1280);
 
                 $post->setImgUrl(
@@ -111,11 +111,10 @@ class PostController extends AbstractController
         EntityManagerInterface $entityManager,
         ImageResizerService $imageResizerService
     ): Response {
-        // Проверка прав на редактирование
         $this->denyAccessUnlessGranted('EDIT', $post);
 
         $form = $this->createForm(PostType::class, $post, [
-            'is_edit' => true, // Указываем, что это форма редактирования
+            'is_edit' => true,
         ]);
         $form->handleRequest($request);
 
@@ -129,7 +128,6 @@ class PostController extends AbstractController
 
                 $imageFile->move($targetDirectory, $newFilename);
 
-                // Изменение размера изображения
                 $imageResizerService->resizeImage($imageFilePath, 1280, 1280);
 
                 $post->setImgUrl(
@@ -154,7 +152,6 @@ class PostController extends AbstractController
         Post $post,
         EntityManagerInterface $entityManager
     ): Response {
-        // Проверка прав на удаление
         $this->denyAccessUnlessGranted('DELETE', $post);
 
         if ($this->isCsrfTokenValid('delete' . $post->getId(), $request->request->get('_token'))) {
@@ -181,9 +178,10 @@ class PostController extends AbstractController
         PaginatorInterface $paginator,
         Request $request,
     ): Response {
-        $page = $request->query->getInt('page', 1); // Получение текущей страницы из параметра URL
+        $page = $request->query->getInt('page', 1);
+        $postsPerPage = 8;
 
-        $posts = $postRepository->findByCategorySlugWithPagination($slug, $page, 8, $paginator);
+        $posts = $postRepository->findByCategorySlugWithPagination($slug, $page, $postsPerPage, $paginator);
         $category = $categoryRepository->findOneBy(['slug' => $slug]);
 
 
@@ -202,18 +200,17 @@ class PostController extends AbstractController
         PaginatorInterface $paginator,
         Request $request
     ): Response {
-        // Получаем пользователя по ID
         $user = $entityManager->getRepository(User::class)->find($id);
+        $postsPerPage = 8;
 
         if (!$user) {
             throw $this->createNotFoundException('User not found');
         }
 
-        // Текущая страница из URL
         $page = $request->query->getInt('page', 1);
 
         // Получение постов пользователя с пагинацией
-        $posts = $postRepository->findByUserWithPagination($user, $page, 8, $paginator);
+        $posts = $postRepository->findByUserWithPagination($user, $page, $postsPerPage, $paginator);
 
         return $this->render('post/user_posts.html.twig', [
             'user' => $user,
