@@ -16,6 +16,35 @@ class CommentRepository extends ServiceEntityRepository
         parent::__construct($registry, Comment::class);
     }
 
+    public function getCommentsWithReplies(int $postId)
+    {
+        $comments = $this->createQueryBuilder('c')
+            ->select('c', 'child', 'author')
+            ->leftJoin('c.children', 'child')
+            ->leftJoin('c.author', 'author')
+            ->where('c.post = :postId')
+            ->setParameter('postId', $postId)
+            ->orderBy('c.created_at', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $groupedComments = [];
+        foreach ($comments as $comment) {
+            $groupedComments[$comment->getParent()?->getId()][] = $comment;
+        }
+
+        foreach ($comments as $comment) {
+            $parentId = $comment->getParent()?->getId();
+            if ($parentId) {
+                $parentComment = $groupedComments[$parentId] ?? [];
+                $parentComment[] = $comment;
+                $groupedComments[$parentId] = $parentComment;
+            }
+        }
+
+        return $groupedComments[null] ?? [];
+    }
+
 //    /**
 //     * @return Comment[] Returns an array of Comment objects
 //     */

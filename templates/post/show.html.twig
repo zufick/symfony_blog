@@ -67,7 +67,7 @@
 
                 {% if comment.children|length > 0 %}
                     <p class="my-4 text-info">Replies:</p>
-                    <div class="replies">
+                    <div class="replies d-flex flex-column gap-4">
                         {% include 'post/_comments.html.twig' with {'comments': comment.children} %}
                     </div>
                 {% endif %}

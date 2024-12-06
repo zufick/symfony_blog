@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Form\CommentType;
 use App\Form\PostType;
 use App\Repository\CategoryRepository;
+use App\Repository\CommentRepository;
 use App\Repository\PostRepository;
 use App\Service\ImageResizerService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,12 +19,17 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Exception\InvalidCsrfTokenException;
-use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Contracts\Cache\CacheInterface;
 
 // TODO: Caching
 // TODO: Testing
 class PostController extends AbstractController
 {
+    public function __construct(private CacheInterface $cache) {
+
+    }
+
+
     #[Route('/', name: 'posts_index', methods: ['GET'])]
     public function index(
         Request $request,
@@ -33,16 +39,23 @@ class PostController extends AbstractController
     {
         $repository = $entityManager->getRepository(Post::class);
         $postsPerPage = 8;
+        $page = $request->query->getInt('page', 1);
 
-        $query = $repository->createQueryBuilder('p')
-            ->orderBy('p.id', 'DESC')
-            ->getQuery();
 
-        $posts = $paginator->paginate(
-            $query,
-            $request->query->getInt('page', 1),
-            $postsPerPage
-        );
+
+        $posts = $this->cache->get('posts_page_' . $page, function () use ($repository, $paginator, $postsPerPage, $page) {
+            $query = $repository->createQueryBuilder('p')
+                ->leftJoin('p.category', 'c')
+                ->addSelect('c') // Ensure that categories are included in the query result
+                ->orderBy('p.id', 'DESC')
+                ->getQuery();
+
+            return $paginator->paginate(
+                $query,
+                $page,
+                $postsPerPage
+            );
+        });
 
         $latestPost = $repository->createQueryBuilder('p')
             ->orderBy('p.id', 'DESC')
@@ -99,6 +112,8 @@ class PostController extends AbstractController
 
             $entityManager->flush();
 
+            $this->cache->clear('posts_page_');
+
             return $this->redirectToRoute('post_show', ['id' => $post->getId()]);
         }
 
@@ -141,6 +156,8 @@ class PostController extends AbstractController
 
             $entityManager->flush();
 
+            $this->cache->clear('posts_page_');
+
             return $this->redirectToRoute('post_show', ['id' => $post->getId()]);
         }
 
@@ -167,17 +184,20 @@ class PostController extends AbstractController
     }
 
     #[Route('/posts/show/{id}', name: 'post_show', methods: ['GET'])]
-    public function show(Post $post): Response {
+    public function show(Request $request, Post $post, CommentRepository $commentRepository): Response {
         $commentForm = $this->createForm(CommentType::class);
-        $rootComments = $post->getComments()->filter(function ($comment) {
-            return $comment->getParent() === null;
+
+        $rootComments = $this->cache->get('post_comments_' . $post->getId(),function() use($post, $commentRepository) {
+            return $commentRepository->getCommentsWithReplies($post->getId());
         });
 
-        return $this->render('post/show.html.twig', [
+        $response = $this->render('post/show.html.twig', [
             'post' => $post,
             'commentForm' => $commentForm->createView(),
             'rootComments' => $rootComments,
         ]);
+
+        return $response;
     }
 
     #[Route('/category/{slug}', name: 'category_show', methods: ['GET'])]
@@ -203,6 +223,7 @@ class PostController extends AbstractController
         ]);
     }
 
+    // TODO: show nested comments when cached (not working currently)
     #[Route('/user/{id}/posts', name: 'user_posts', methods: ['GET'])]
     public function userPosts(
         int $id,
@@ -251,6 +272,8 @@ class PostController extends AbstractController
 
             $entityManager->persist($comment);
             $entityManager->flush();
+
+            $this->cache->clear('post_comments_');
         }
 
         return $this->redirectToRoute('post_show', ['id' => $post->getId()]);
@@ -268,6 +291,8 @@ class PostController extends AbstractController
 
         $entityManager->remove($comment);
         $entityManager->flush();
+
+        $this->cache->clear('post_comments_');
 
         return $this->redirectToRoute('post_show', ['id' => $comment->getPost()->getId()]);
     }
