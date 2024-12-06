@@ -17,9 +17,11 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Exception\InvalidCsrfTokenException;
+use Symfony\Component\Security\Csrf\CsrfToken;
 
 // TODO: Caching
-// TODO: Comments
+// TODO: Testing
 class PostController extends AbstractController
 {
     #[Route('/', name: 'posts_index', methods: ['GET'])]
@@ -252,5 +254,21 @@ class PostController extends AbstractController
         }
 
         return $this->redirectToRoute('post_show', ['id' => $post->getId()]);
+    }
+
+    #[Route('/comments/{id}/delete', name: 'comment_delete', methods: ['POST'])]
+    public function deleteComment(Request $request, Comment $comment, EntityManagerInterface $entityManager): Response
+    {
+        $this->denyAccessUnlessGranted('DELETE', $comment);
+
+        $submittedToken = $request->getPayload()->get('_token');
+        if (!$this->isCsrfTokenValid('del-comment'.$comment->getId(), $submittedToken)) {
+            throw new InvalidCsrfTokenException();
+        }
+
+        $entityManager->remove($comment);
+        $entityManager->flush();
+
+        return $this->redirectToRoute('post_show', ['id' => $comment->getPost()->getId()]);
     }
 }
