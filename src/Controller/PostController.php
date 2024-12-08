@@ -21,7 +21,6 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Exception\InvalidCsrfTokenException;
 use Symfony\Contracts\Cache\CacheInterface;
 
-// TODO: Caching
 // TODO: Testing
 class PostController extends AbstractController
 {

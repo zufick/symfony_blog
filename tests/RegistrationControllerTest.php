@@ -6,10 +6,13 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class RegistrationControllerTest extends WebTestCase
 {
+    use MailerAssertionsTrait;
+
     private KernelBrowser $client;
     private UserRepository $userRepository;
 
@@ -40,7 +43,9 @@ class RegistrationControllerTest extends WebTestCase
 
         $this->client->submitForm('Register', [
             'registration_form[email]' => 'me@example.com',
-            'registration_form[plainPassword]' => 'password',
+            'registration_form[username]' => 'testing_username',
+            'registration_form[plainPassword][first]' => 'password',
+            'registration_form[plainPassword][second]' => 'password',
             'registration_form[agreeTerms]' => true,
         ]);
 
@@ -51,8 +56,8 @@ class RegistrationControllerTest extends WebTestCase
 
         // Ensure the verification email was sent
         // Use either assertQueuedEmailCount() || assertEmailCount() depending on your mailer setup
-        // self::assertQueuedEmailCount(1);
-        self::assertEmailCount(1);
+        self::assertQueuedEmailCount(1);
+        //self::assertEmailCount(1);
 
         self::assertCount(1, $messages = $this->getMailerMessages());
         self::assertEmailAddressContains($messages[0], 'from', 'example@test.com');

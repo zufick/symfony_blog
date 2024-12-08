@@ -15,17 +15,17 @@ class UserChecker implements UserCheckerInterface
         if (!$user instanceof AppUser) {
             return;
         }
-
-        if (!$user->isVerified()) {
-            // the message passed to this exception is meant to be displayed to the user
-            throw new CustomUserMessageAccountStatusException('Verify your email before logging in.');
-        }
     }
 
     public function checkPostAuth(UserInterface $user): void
     {
         if (!$user instanceof AppUser) {
             return;
+        }
+
+        if (!$user->isVerified()) {
+            // the message passed to this exception is meant to be displayed to the user
+            throw new CustomUserMessageAccountStatusException('Verify your email before logging in.');
         }
 
         #// user account is expired, the user may be notified
