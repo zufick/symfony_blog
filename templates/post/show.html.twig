@@ -4,8 +4,8 @@
 
 {% block body %}
     <article class="blog-post mb-5" style="display: flow-root;">
-        <h2 class="display-5 link-body-emphasis mb-1">{{ post.title }}</h2>
-        <div style="gap: 20px; display: flex; flex-wrap: wrap;">
+        <h2 class="post-title display-5 link-body-emphasis mb-1">{{ post.title }}</h2>
+        <div class="post-categories" style="gap: 20px; display: flex; flex-wrap: wrap;">
             {% for category in post.categories %}
                 <span class="d-inline-block mb-2 text-secondary">{{ category.title }}</span>
             {% endfor %}
@@ -25,7 +25,7 @@
         </div>
 
         <div>
-            <a href="{{ post.imgUrl }}" target="_blank"><img style="max-width: 420px; max-height: 150px; float: left; margin: 0px 30px 30px 0;" src="{{ post.imgUrl }}" alt="Post image"></a>
+            <a href="{{ post.imgUrl }}" target="_blank"><img class="post-img" style="max-width: 420px; max-height: 150px; float: left; margin: 0px 30px 30px 0;" src="{{ post.imgUrl }}" alt="Post image"></a>
             <p style="white-space: pre-wrap;">{{ post.content }}</p>
         </div>
     </article>

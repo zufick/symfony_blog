@@ -11,7 +11,7 @@ use App\Form\PostType;
 use App\Repository\CategoryRepository;
 use App\Repository\CommentRepository;
 use App\Repository\PostRepository;
-use App\Service\ImageResizerService;
+use App\Service\ImageService;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -70,9 +70,9 @@ class PostController extends AbstractController
 
     #[Route('/posts/new', name: 'post_new', methods: ['GET', 'POST'])]
     public function new(
-        Request $request,
+        Request                $request,
         EntityManagerInterface $entityManager,
-        ImageResizerService $imageResizerService,
+        ImageService    $imageService,
     ):Response
     {
         $post = new Post();
@@ -92,23 +92,10 @@ class PostController extends AbstractController
             $imageFile = $form->get('image')->getData();
 
             if ($imageFile) {
-                $newFilename = uniqid() . '.' . $imageFile->guessExtension();
-                $targetDirectory = $this->getParameter('uploads_directory');
-                $imageFilePath = $targetDirectory . '/' . $newFilename;
-
-                $imageFile->move($targetDirectory, $newFilename);
-
-                $imageResizerService->resizeImage($imageFilePath, 1280, 1280);
-
-                $post->setImgUrl(
-                    $this->getParameter('uploads_base_url') . '/' . $newFilename
-                );
+                $post->setImgUrl($imageService->saveImage($imageFile));
             }
 
-
-
             $entityManager->persist($post);
-
             $entityManager->flush();
 
             $this->cache->clear('posts_page_');
@@ -127,7 +114,7 @@ class PostController extends AbstractController
         Request $request,
         Post $post,
         EntityManagerInterface $entityManager,
-        ImageResizerService $imageResizerService
+        ImageService $imageService
     ): Response {
         $this->denyAccessUnlessGranted('EDIT', $post);
 
@@ -140,17 +127,7 @@ class PostController extends AbstractController
             $imageFile = $form->get('image')->getData();
 
             if ($imageFile) {
-                $newFilename = uniqid() . '.' . $imageFile->guessExtension();
-                $targetDirectory = $this->getParameter('uploads_directory');
-                $imageFilePath = $targetDirectory . '/' . $newFilename;
-
-                $imageFile->move($targetDirectory, $newFilename);
-
-                $imageResizerService->resizeImage($imageFilePath, 1280, 1280);
-
-                $post->setImgUrl(
-                    $this->getParameter('uploads_base_url') . '/' . $newFilename
-                );
+                $post->setImgUrl($imageService->saveImage($imageFile));
             }
 
             $entityManager->flush();
