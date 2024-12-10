@@ -11,8 +11,8 @@
 ## Running locally:
 #### Fresh setup:
 ```bash
-composer install && \
 cp .env.example .env && \
+composer install && \
 php bin/console secrets:generate-keys && \
 php bin/console asset-map:compile && \
 php bin/console cache:pool:clear --all && \
@@ -20,6 +20,8 @@ php bin/console doctrine:database:create && \
 php bin/console doctrine:schema:update --force && \
 php bin/console doctrine:fixtures:load
 ```
+Type "yes" when prompted
+``Careful, database "main" will be purged. Do you want to continue? (yes/no)``
 
 #### Starting server:
 ```bash
