@@ -3,18 +3,32 @@
 namespace App\Tests;
 
 use App\Entity\Category;
+use App\Entity\Post;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class BlogPostTest extends WebTestCase
 {
-    public function testCreatePostFormAccess(): void
+    public function testCreatePostFormAccessGuest(): void
     {
         $client = static::createClient();
         $client->request('GET', '/posts/new');
 
         $this->assertResponseRedirects('/login');
+    }
+
+    public function testCreatePostFormAccessNonAdmin(): void
+    {
+        $client = static::createClient();
+
+        $userRepository = static::getContainer()->get(UserRepository::class);
+        $testUser = $userRepository->findOneByEmail('user@example.com');
+        $client->loginUser($testUser);
+
+        $client->request('GET', '/posts/new');
+
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testCreatePost(): void
@@ -85,5 +99,53 @@ class BlogPostTest extends WebTestCase
         $this->assertResponseStatusCodeSame(422);
 
         $this->assertSelectorTextContains('.invalid-feedback', 'The file is too large');
+    }
+
+    public function testCreateAndDeleteComment(): void
+    {
+        $client = static::createClient();
+        $userRepository = static::getContainer()->get(UserRepository::class);
+
+        $testAdmin = $userRepository->findOneByEmail('admin@example.com');
+        $testUser = $userRepository->findOneByEmail('user@example.com');
+        $client->loginUser($testUser);
+
+        $post = new Post();
+        $post->setTitle('Test Post');
+        $post->setContent('This is a test post.');
+        $post->setUser($testAdmin);
+        $post->setImgUrl('/uploads/null.jpg');
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+        $entityManager->persist($post);
+        $entityManager->flush();
+
+        $postId = $post->getId();
+
+        $crawler = $client->request('GET', "/posts/show/$postId");
+
+        $this->assertResponseIsSuccessful();
+
+
+        $form = $crawler->selectButton('post_submit_comment')->form([
+            'comment[content]' => 'This is a test comment.',
+        ]);
+
+        $crawler = $client->submit($form);
+
+        $this->assertResponseRedirects("/posts/show/$postId");
+
+        $crawler = $client->followRedirect();
+
+        $this->assertSelectorTextContains('.comment-content', 'This is a test comment.');
+        $this->assertSelectorTextContains('.comment-author', $testUser->getUsername());
+
+        $deleteCommentForm = $crawler->selectButton('comment_delete_btn')->form();
+        $client->submit($deleteCommentForm);
+
+        $this->assertResponseRedirects("/posts/show/$postId");
+        $crawler = $client->followRedirect();
+
+        $this->assertSelectorNotExists('.comment-content:contains("This is a test comment.")');
+        $this->assertSelectorNotExists(sprintf('.comment-author:contains("%s")', $testUser->getUsername()));
     }
 }
