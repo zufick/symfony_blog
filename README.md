@@ -1,6 +1,6 @@
 <h1 align="center">Symfony blog</h1>
 <p align="center">Blogging platform built with PHP (Symfony) and styled using Bootstrap. </p>
-<p align="center">This application allows users to register using email, create, edit, and delete posts, write comments, and delete comments.</p>
+<p align="center">This application allows users to register using email, create, edit, and delete posts, write comments, delete comments, and organize comments in a nested structure.</p>
 
 <p align="center">
 <img src="readme/1.jpg" alt="" />
