@@ -1,3 +1,12 @@
+<h1 align="center">Symfony blog</h1>
+<p align="center">Blogging platform built with PHP (Symfony) and styled using Bootstrap. </p>
+<p align="center">This application allows users to register using email, create, edit, and delete posts, write comments, and delete comments.</p>
+
+<p align="center">
+<img src="readme/1.jpg" alt="" />
+<img src="readme/2.jpg" alt="" />
+<img src="readme/3.jpg" alt="" />
+</p>
 
 ## Running locally:
 #### Fresh setup:
@@ -19,6 +28,15 @@ symfony server:start
 
 ```bash
 php bin/console messenger:consume async
+```
+
+#### Default users:
+```
+admin@example.com
+123123
+
+user@example.com
+123123
 ```
 
 

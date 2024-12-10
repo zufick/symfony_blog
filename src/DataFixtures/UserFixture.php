@@ -22,7 +22,6 @@ class UserFixture extends Fixture
         $user->setEmail('user@example.com');
         $user->setUsername('user');
         $user->setFullname('Ulysses');
-        //$admin->setRoles(['ROLE_USER']);
         $user->setVerified(true);
 
         // Hash the password
